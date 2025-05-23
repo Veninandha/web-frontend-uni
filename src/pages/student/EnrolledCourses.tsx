@@ -12,9 +12,9 @@ const EnrolledCourses = () => {
   const student = currentUser as Student;
   const [searchTerm, setSearchTerm] = useState('');
 
-  // Get enrolled courses
+  // Get enrolled courses with null check for student.courses
   const enrolledCourses = courses.filter(course => 
-    student.courses.includes(course.id) &&
+    (student?.courses || []).includes(course.id) &&
     (course.name.toLowerCase().includes(searchTerm.toLowerCase()) ||
      course.code.toLowerCase().includes(searchTerm.toLowerCase()) ||
      course.department.toLowerCase().includes(searchTerm.toLowerCase()))

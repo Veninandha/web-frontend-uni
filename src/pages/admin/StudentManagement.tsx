@@ -36,12 +36,12 @@ const StudentManagement = () => {
             if (row.length === headers.length) {
               const studentData: Partial<Student> = {
                 id: `S${Math.floor(1000 + Math.random() * 9000)}`,
-                name: row[headers.indexOf('name')],
-                email: row[headers.indexOf('email')],
-                department: row[headers.indexOf('department')] as Department,
-                enrollmentYear: row[headers.indexOf('enrollmentYear')] || new Date().getFullYear().toString(),
-                semester: row[headers.indexOf('semester')] || '1',
-                phone: row[headers.indexOf('phone')],
+                name: row[headers.findIndex(h => h === 'name')],
+                email: row[headers.findIndex(h => h === 'email')],
+                department: row[headers.findIndex(h => h === 'department')] as Department,
+                enrollmentYear: row[headers.findIndex(h => h === 'enrollmentYear')] || new Date().getFullYear().toString(),
+                semester: row[headers.findIndex(h => h === 'semester')] || '1',
+                phone: row[headers.findIndex(h => h === 'phone')],
                 password: 'password',
                 role: 'student',
                 courses: [],
