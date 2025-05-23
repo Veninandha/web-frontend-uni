@@ -1,6 +1,6 @@
 import { useState } from 'react';
 import { useNavigate } from 'react-router-dom';
-import { BookOpen, Calendar, BarChart2, ChevronRight } from 'lucide-react';
+import { BookOpen, Calendar, BarChart2, ChevronRight, Users } from 'lucide-react';
 import { useAuth } from '../../context/AuthContext';
 import { useDataContext } from '../../context/DataContext';
 import { Student } from '../../types';
@@ -11,19 +11,25 @@ const StudentDashboard = () => {
   const student = currentUser as Student;
   const { courses, assignments } = useDataContext();
   
+  // Get available courses (not enrolled)
+  const availableCourses = courses.filter(course => 
+    !student.courses.includes(course.id) &&
+    course.department === student.department
+  ).slice(0, 3); // Show only first 3
+  
   // Get courses the student is enrolled in
-  const enrolledCourses = courses?.filter(course => 
-    student?.courses?.includes(course.id)
+  const enrolledCourses = courses.filter(course => 
+    student.courses.includes(course.id)
   ) || [];
   
   // Get assignments for enrolled courses
-  const courseAssignments = assignments?.filter(assignment => 
-    student?.courses?.includes(assignment.courseId)
+  const courseAssignments = assignments.filter(assignment => 
+    student.courses.includes(assignment.courseId)
   ) || [];
 
-  // Calculate attendance percentage with proper null checks
+  // Calculate attendance percentage
   const calculateAttendancePercentage = () => {
-    if (!student?.attendanceRecords || !Array.isArray(student.attendanceRecords) || student.attendanceRecords.length === 0) {
+    if (!student.attendanceRecords || student.attendanceRecords.length === 0) {
       return 0;
     }
     
@@ -33,31 +39,11 @@ const StudentDashboard = () => {
 
   const attendancePercentage = calculateAttendancePercentage();
 
-  const getGradeForAssignment = (assignmentId: string) => {
-    return student?.grades?.find(grade => grade.assignmentId === assignmentId);
-  };
-
-  const handleCourseClick = (courseId: string) => {
-    navigate(`/student/course/${courseId}`);
-  };
-
-  const handleGradeClick = (assignmentId: string) => {
-    navigate(`/student/grades/${assignmentId}`);
-  };
-
-  if (!student) {
-    return (
-      <div className="flex items-center justify-center min-h-screen">
-        <p className="text-gray-600">Loading student data...</p>
-      </div>
-    );
-  }
-
   return (
     <div>
       <div className="mb-6">
         <h1 className="text-2xl font-bold text-gray-800">Student Dashboard</h1>
-        <p className="text-gray-600">Welcome back, {student.name || 'Student'}</p>
+        <p className="text-gray-600">Welcome back, {student.name}</p>
       </div>
 
       <div className="grid grid-cols-1 md:grid-cols-3 gap-6 mb-8">
@@ -130,34 +116,51 @@ const StudentDashboard = () => {
       <div className="grid grid-cols-1 lg:grid-cols-2 gap-6">
         <div className="bg-white rounded-lg shadow-md overflow-hidden">
           <div className="px-6 py-4 border-b border-gray-200 flex justify-between items-center">
-            <h2 className="text-lg font-semibold text-gray-800">My Courses</h2>
+            <h2 className="text-lg font-semibold text-gray-800">Available Courses</h2>
+            <button
+              onClick={() => navigate('/student/courses')}
+              className="text-blue-600 hover:text-blue-800 text-sm font-medium"
+            >
+              View All
+            </button>
           </div>
-          <div className="px-6 py-4">
-            {enrolledCourses.length > 0 ? (
-              <div className="divide-y divide-gray-200">
-                {enrolledCourses.map((course) => (
+          <div className="p-6">
+            {availableCourses.length > 0 ? (
+              <div className="space-y-4">
+                {availableCourses.map((course) => (
                   <div 
-                    key={course.id} 
-                    className="py-4 flex justify-between items-center cursor-pointer hover:bg-gray-50 -mx-6 px-6 transition-colors duration-200"
-                    onClick={() => handleCourseClick(course.id)}
+                    key={course.id}
+                    className="border rounded-lg p-4 hover:bg-gray-50 transition-colors duration-200 cursor-pointer"
+                    onClick={() => navigate('/student/courses')}
                   >
-                    <div className="flex items-center">
-                      <div className="flex-shrink-0 h-10 w-10 bg-blue-100 rounded-full flex items-center justify-center">
-                        <BookOpen className="h-5 w-5 text-blue-600" />
+                    <div className="flex items-center justify-between">
+                      <div className="flex items-center">
+                        <div className="h-10 w-10 bg-blue-100 rounded-full flex items-center justify-center">
+                          <BookOpen className="h-5 w-5 text-blue-600" />
+                        </div>
+                        <div className="ml-4">
+                          <h3 className="text-sm font-medium text-gray-900">{course.name}</h3>
+                          <p className="text-sm text-gray-500">{course.code}</p>
+                        </div>
                       </div>
-                      <div className="ml-4">
-                        <p className="text-base font-medium text-gray-900">{course.name}</p>
-                        <p className="text-sm text-gray-500">{course.code} • {course.faculty}</p>
-                      </div>
+                      <ChevronRight className="h-5 w-5 text-gray-400" />
                     </div>
-                    <ChevronRight className="h-5 w-5 text-gray-400" />
+                    <div className="mt-2">
+                      <p className="text-sm text-gray-600 line-clamp-2">
+                        {course.description || 'No description available'}
+                      </p>
+                    </div>
+                    <div className="mt-2 flex items-center">
+                      <Users className="h-4 w-4 text-gray-400 mr-1" />
+                      <span className="text-xs text-gray-500">
+                        {course.enrolledStudents?.length || 0} students enrolled
+                      </span>
+                    </div>
                   </div>
                 ))}
               </div>
             ) : (
-              <div className="py-4 text-center">
-                <p className="text-gray-500">You are not enrolled in any courses yet.</p>
-              </div>
+              <p className="text-center text-gray-500">No available courses in your department</p>
             )}
           </div>
         </div>
@@ -184,7 +187,7 @@ const StudentDashboard = () => {
                     <div 
                       key={grade.id} 
                       className="py-4 flex justify-between items-center cursor-pointer hover:bg-gray-50 -mx-6 px-6 transition-colors duration-200"
-                      onClick={() => handleGradeClick(assignment.id)}
+                      onClick={() => navigate(`/student/grades/${assignment.id}`)}
                     >
                       <div className="flex-1">
                         <p className="text-base font-medium text-gray-900">{assignment.title}</p>
